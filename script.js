@@ -53,6 +53,9 @@ signupBtn.addEventListener("click", async () => {
   welcomeUser.textContent = `Welcome, ${username}! Let's play.`;
   document.getElementById("signupSection").style.display = "none";
   gameSection.style.display = "block";
+
+  // ✅ Automatically start the game after successful signup
+  fetchTrivia();
 });
 
 function checkIfSubmittedToday(username) {
