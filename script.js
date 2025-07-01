@@ -49,7 +49,7 @@ async function fetchTrivia() {
   }
 
   try {
-    const response = await fetch(`http://127.0.0.1:5000/daily-questions/${username}`);
+    const response = await fetch(`https://trivia-backend-5s52.onrender.com/daily-questions/${username}`);
     const data = await response.json();
 
     console.log("Trivia API response:", response.status, data);
@@ -64,7 +64,6 @@ async function fetchTrivia() {
     showCustomPopup("Trivia unavailable today.");
   }
 }
-
 
 function showQuestions(questions) {
   const container = document.getElementById("quizContainer");
@@ -129,7 +128,7 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   const username = localStorage.getItem("username") || "Guest";
 
   try {
-    const response = await fetch("http://127.0.0.1:5000/submit-score", {
+    const response = await fetch("https://trivia-backend-5s52.onrender.com/submit-score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, score })
