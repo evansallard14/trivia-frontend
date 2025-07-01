@@ -41,11 +41,25 @@ signupBtn.addEventListener("click", () => {
     return;
   }
 
-  // Set Firebase session
-  welcomeUser.textContent = `Welcome, ${username}! Let's play.`;
-  document.getElementById("signupSection").style.display = "none";
-  gameSection.style.display = "block";
+  checkIfSubmittedToday(username).then(alreadySubmitted => {
+    if (alreadySubmitted) {
+      signupMessage.textContent = "You already played today. Come back tomorrow!";
+      signupMessage.style.color = "red";
+      return;
+    }
+
+    signupMessage.textContent = "";
+    welcomeUser.textContent = `Welcome, ${username}! Let's play.`;
+    document.getElementById("signupSection").style.display = "none";
+    gameSection.style.display = "block";
+  });
 });
+
+function checkIfSubmittedToday(username) {
+  const today = new Date().toISOString().slice(0, 10);
+  const refPath = ref(db, `submissions/${today}/${username}`);
+  return get(refPath).then(snapshot => snapshot.exists());
+}
 
 // == Game Logic ==
 document.getElementById("startBtn").addEventListener("click", fetchTrivia);
@@ -133,6 +147,8 @@ function showQuestions(questions) {
 
 // == Submit Score ==
 document.getElementById("submitBtn").addEventListener("click", async () => {
+  document.getElementById("submitBtn").disabled = true;
+
   if (score === 100) score += 50;
 
   try {
@@ -146,7 +162,8 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
     if (response.ok) {
       showCustomPopup(data.message || `You earned ${score} points.`);
       document.getElementById("submitSection").style.display = "none";
-      saveScoreToFirebase();
+      await updateFirebaseScores();
+      markUserAsSubmitted(username);
     } else {
       showCustomPopup(data.error || "Score not submitted.");
     }
@@ -156,21 +173,33 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   }
 });
 
-function saveScoreToFirebase() {
+function updateFirebaseScores() {
   const now = new Date();
-  const day = now.toISOString().slice(0, 10);
-  const week = `${now.getFullYear()}-W${getWeekNumber(now)}`;
-  const month = `${now.getFullYear()}-${now.getMonth() + 1}`;
-  const year = `${now.getFullYear()}`;
+  const periods = {
+    daily: now.toISOString().slice(0, 10),
+    weekly: `${now.getFullYear()}-W${getWeekNumber(now)}`,
+    monthly: `${now.getFullYear()}-${now.getMonth() + 1}`,
+    yearly: `${now.getFullYear()}`
+  };
 
-  const periods = { daily: day, weekly: week, monthly: month, yearly: year };
-
+  const updates = [];
   for (const [period, label] of Object.entries(periods)) {
-    set(ref(db, `leaderboard/${period}/${label}/${username}`), {
-      username,
-      score
-    });
+    const userRef = ref(db, `leaderboard/${period}/${label}/${username}`);
+    updates.push(
+      get(userRef).then(snapshot => {
+        const existing = snapshot.val();
+        const updatedScore = existing ? existing.score + score : score;
+        return set(userRef, { username, score: updatedScore });
+      })
+    );
   }
+  return Promise.all(updates);
+}
+
+function markUserAsSubmitted(username) {
+  const today = new Date().toISOString().slice(0, 10);
+  const refPath = ref(db, `submissions/${today}/${username}`);
+  set(refPath, true);
 }
 
 function getWeekNumber(date) {
@@ -223,7 +252,14 @@ function loadLeaderboard(period) {
       return;
     }
 
-    const entries = Object.values(scores)
+    const aggregated = {};
+    Object.values(scores).forEach(entry => {
+      if (!aggregated[entry.username]) aggregated[entry.username] = 0;
+      aggregated[entry.username] += entry.score;
+    });
+
+    const entries = Object.entries(aggregated)
+      .map(([username, score]) => ({ username, score }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 10);
 
