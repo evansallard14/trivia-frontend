@@ -185,4 +185,10 @@ input {
   text-align: center;
   font-size: 1.1rem;
 }
+#signupSection ul {
+  padding-left: 1.2rem;
+  list-style-type: disc;
+  font-size: 1rem;
+  color: #444;
+}
 
