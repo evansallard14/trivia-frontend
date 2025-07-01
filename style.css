@@ -1,0 +1,188 @@
+/* Global Styles */
+body {
+  background-color: #000;
+  color: #fff;
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+}
+
+/* Buttons */
+button {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  margin: 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #cc0000;
+}
+
+/* Inputs */
+input {
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  width: 250px;
+}
+
+/* Quiz Container */
+#quizContainer {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Question and Answer Styling */
+.question-block {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.answer-btn {
+  display: inline-block;
+  margin: 8px auto;
+  width: auto;
+  min-width: 200px;
+  max-width: 90%;
+  padding: 10px 20px;
+  background-color: #444;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.answer-btn:hover:enabled {
+  background-color: #666;
+}
+
+.correct {
+  background-color: green !important;
+  color: white;
+}
+
+.incorrect {
+  background-color: darkred !important;
+  color: white;
+}
+
+/* Leaderboard Modal */
+#leaderboardModal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #222;
+  color: white;
+  border: 2px solid red;
+  border-radius: 10px;
+  padding: 20px;
+  z-index: 9999;
+  box-shadow: 0 0 20px red;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-content {
+  position: relative;
+}
+
+#closeLeaderboard {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+  color: red;
+}
+
+/* Leaderboard Tabs */
+.tabs {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.tab-btn {
+  background-color: #222;
+  color: white;
+  border: 1px solid red;
+  padding: 5px 10px;
+  border-radius: 6px;
+  flex: 1;
+  margin: 0 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background-color: white;
+  color: black;
+}
+
+/* Leaderboard Table */
+#leaderboardContent table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+#leaderboardContent th,
+#leaderboardContent td {
+  border-bottom: 1px solid red;
+  padding: 8px;
+  text-align: center;
+}
+
+/* Hidden class */
+.hidden {
+  display: none;
+}
+
+/* Leaderboard open button */
+#openLeaderboard {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background-color: red;
+  color: white;
+  font-weight: bold;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+/* Popup styling */
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #333;
+  color: white;
+  border: 2px solid red;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px red;
+  z-index: 10000;
+  text-align: center;
+  font-size: 1.1rem;
+}
+

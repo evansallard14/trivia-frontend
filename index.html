@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Trivia Challenge</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Leaderboard Button -->
+  <button id="openLeaderboard">🏆 Leaderboard</button>
+
+  <!-- Sign Up Section -->
+  <section id="signupSection">
+    <h1>Daily Trivia Challenge</h1>
+    <input type="text" id="usernameInput" placeholder="Enter a unique username" />
+    <button id="signupBtn">Sign Up</button>
+    <p id="signupMessage"></p>
+  </section>
+
+  <!-- Game Section -->
+  <section id="gameSection" style="display: none;">
+    <h2 id="welcomeUser"></h2>
+    <button id="startBtn">Start Today's Quiz</button>
+    <div id="quizContainer"></div>
+    <div id="submitSection" style="display: none;">
+      <button id="submitBtn">Submit Answers</button>
+    </div>
+  </section>
+
+  <!-- Leaderboard Modal -->
+  <div id="leaderboardModal" class="hidden">
+    <div class="modal-content">
+      <span id="closeLeaderboard">✖</span>
+      <h2>Leaderboard</h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-period="daily">Daily</button>
+        <button class="tab-btn" data-period="weekly">Weekly</button>
+        <button class="tab-btn" data-period="monthly">Monthly</button>
+        <button class="tab-btn" data-period="yearly">Yearly</button>
+      </div>
+      <div id="leaderboardContent"></div>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script src="script.js"></script>
+</body>
+</html>
