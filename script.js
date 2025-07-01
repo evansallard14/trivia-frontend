@@ -1,3 +1,27 @@
+// == Firebase Setup ==
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  set,
+  get,
+  child,
+  onValue
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCsk8BddBwZFcOfnGISTk-gbGft9C44IY4",
+  authDomain: "trivialeaderboard.firebaseapp.com",
+  projectId: "trivialeaderboard",
+  storageBucket: "trivialeaderboard.appspot.com",
+  messagingSenderId: "928034737197",
+  appId: "1:928034737197:web:596fb6dabb7759a262bca4",
+  databaseURL: "https://trivialeaderboard-default-rtdb.firebaseio.com"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 // == Signup Section ==
 const signupBtn = document.getElementById("signupBtn");
 const usernameInput = document.getElementById("usernameInput");
@@ -7,33 +31,21 @@ const welcomeUser = document.getElementById("welcomeUser");
 
 let score = 0;
 let answeredQuestions = 0;
+let username = "";
 
 signupBtn.addEventListener("click", () => {
-  const username = usernameInput.value.trim();
-
+  username = usernameInput.value.trim();
   if (!username) {
     signupMessage.textContent = "Please enter a username.";
     signupMessage.style.color = "red";
     return;
   }
 
-  localStorage.setItem("username", username);
-  signupMessage.textContent = `Welcome, ${username}!`;
-  signupMessage.style.color = "green";
-
-  showGameSection();
+  // Set Firebase session
+  welcomeUser.textContent = `Welcome, ${username}! Let's play.`;
+  document.getElementById("signupSection").style.display = "none";
+  gameSection.style.display = "block";
 });
-
-function showGameSection() {
-  const storedUsername = localStorage.getItem("username");
-  if (storedUsername) {
-    document.getElementById("signupSection").style.display = "none";
-    gameSection.style.display = "block";
-    welcomeUser.textContent = `Welcome, ${storedUsername}! Let's play.`;
-  }
-}
-
-showGameSection();
 
 // == Game Logic ==
 document.getElementById("startBtn").addEventListener("click", fetchTrivia);
@@ -42,7 +54,6 @@ let totalQuestions = 10;
 let questionsAnswered = new Array(totalQuestions).fill(false);
 
 async function fetchTrivia() {
-  const username = localStorage.getItem("username");
   if (!username) {
     alert("Please sign up with a username first.");
     return;
@@ -51,8 +62,6 @@ async function fetchTrivia() {
   try {
     const response = await fetch(`https://trivia-backend-5s52.onrender.com/daily-questions/${username}`);
     const data = await response.json();
-
-    console.log("Trivia API response:", response.status, data);
 
     if (response.ok) {
       showQuestions(data.questions);
@@ -122,10 +131,9 @@ function showQuestions(questions) {
   });
 }
 
-// == Score Submission ==
+// == Submit Score ==
 document.getElementById("submitBtn").addEventListener("click", async () => {
   if (score === 100) score += 50;
-  const username = localStorage.getItem("username") || "Guest";
 
   try {
     const response = await fetch("https://trivia-backend-5s52.onrender.com/submit-score", {
@@ -133,11 +141,12 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, score })
     });
-    const data = await response.json();
 
+    const data = await response.json();
     if (response.ok) {
       showCustomPopup(data.message || `You earned ${score} points.`);
       document.getElementById("submitSection").style.display = "none";
+      saveScoreToFirebase();
     } else {
       showCustomPopup(data.error || "Score not submitted.");
     }
@@ -145,31 +154,24 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
     console.error(err);
     showCustomPopup("Error submitting score.");
   }
-
-  // Update local leaderboard for demo/dev
-  const now = new Date();
-  const periods = {
-    daily: now.toISOString().slice(0, 10),
-    weekly: `${now.getFullYear()}-W${getWeekNumber(now)}`,
-    monthly: `${now.getFullYear()}-${now.getMonth() + 1}`,
-    yearly: `${now.getFullYear()}`
-  };
-
-  for (let period in periods) {
-    const key = `leaderboard_${period}_${periods[period]}`;
-    const board = JSON.parse(localStorage.getItem(key) || "[]");
-
-    const existing = board.find(entry => entry.username === username);
-    if (existing) {
-      existing.score += score;
-    } else {
-      board.push({ username, score });
-    }
-
-    board.sort((a, b) => b.score - a.score);
-    localStorage.setItem(key, JSON.stringify(board.slice(0, 10)));
-  }
 });
+
+function saveScoreToFirebase() {
+  const now = new Date();
+  const day = now.toISOString().slice(0, 10);
+  const week = `${now.getFullYear()}-W${getWeekNumber(now)}`;
+  const month = `${now.getFullYear()}-${now.getMonth() + 1}`;
+  const year = `${now.getFullYear()}`;
+
+  const periods = { daily: day, weekly: week, monthly: month, yearly: year };
+
+  for (const [period, label] of Object.entries(periods)) {
+    set(ref(db, `leaderboard/${period}/${label}/${username}`), {
+      username,
+      score
+    });
+  }
+}
 
 function getWeekNumber(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -204,42 +206,43 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 
 function loadLeaderboard(period) {
   const now = new Date();
-  const periods = {
+  const labels = {
     daily: now.toISOString().slice(0, 10),
     weekly: `${now.getFullYear()}-W${getWeekNumber(now)}`,
     monthly: `${now.getFullYear()}-${now.getMonth() + 1}`,
     yearly: `${now.getFullYear()}`
   };
 
-  const key = `leaderboard_${period}_${periods[period]}`;
-  const scores = JSON.parse(localStorage.getItem(key) || "[]");
+  const label = labels[period];
+  const dbRef = ref(db, `leaderboard/${period}/${label}`);
 
-  const aggregated = {};
-  scores.forEach(entry => {
-    if (!aggregated[entry.username]) aggregated[entry.username] = 0;
-    aggregated[entry.username] += entry.score;
+  onValue(dbRef, (snapshot) => {
+    const scores = snapshot.val();
+    if (!scores) {
+      leaderboardContent.innerHTML = "<p>No scores yet.</p>";
+      return;
+    }
+
+    const entries = Object.values(scores)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+
+    leaderboardContent.innerHTML = `
+      <table style="width:100%; margin-top: 20px;">
+        <tr><th>Rank</th><th>Username</th><th>Score</th></tr>
+        ${entries.map((entry, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${entry.username}</td>
+            <td>${entry.score}</td>
+          </tr>
+        `).join("")}
+      </table>
+    `;
   });
-
-  const ranked = Object.entries(aggregated)
-    .map(([username, score]) => ({ username, score }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
-
-  leaderboardContent.innerHTML = `
-    <table style="width:100%; margin-top: 20px;">
-      <tr><th>Rank</th><th>Username</th><th>Score</th></tr>
-      ${ranked.map((entry, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${entry.username}</td>
-          <td>${entry.score}</td>
-        </tr>
-      `).join("")}
-    </table>
-  `;
 }
 
-// == Custom Styled Popup ==
+// == Popup ==
 function showCustomPopup(message) {
   let popup = document.createElement("div");
   popup.className = "popup";
