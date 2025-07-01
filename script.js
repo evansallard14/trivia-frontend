@@ -33,7 +33,7 @@ let score = 0;
 let answeredQuestions = 0;
 let username = "";
 
-signupBtn.addEventListener("click", () => {
+signupBtn.addEventListener("click", async () => {
   username = usernameInput.value.trim();
   if (!username) {
     signupMessage.textContent = "Please enter a username.";
@@ -41,24 +41,36 @@ signupBtn.addEventListener("click", () => {
     return;
   }
 
-  checkIfSubmittedToday(username).then(alreadySubmitted => {
-    if (alreadySubmitted) {
-      signupMessage.textContent = "You already played today. Come back tomorrow!";
-      signupMessage.style.color = "red";
-      return;
-    }
+  const alreadySubmitted = await checkIfSubmittedToday(username);
+  if (alreadySubmitted) {
+    signupMessage.textContent = "You already played today. Come back tomorrow!";
+    signupMessage.style.color = "red";
+    showPreviousScore(username);
+    return;
+  }
 
-    signupMessage.textContent = "";
-    welcomeUser.textContent = `Welcome, ${username}! Let's play.`;
-    document.getElementById("signupSection").style.display = "none";
-    gameSection.style.display = "block";
-  });
+  signupMessage.textContent = "";
+  welcomeUser.textContent = `Welcome, ${username}! Let's play.`;
+  document.getElementById("signupSection").style.display = "none";
+  gameSection.style.display = "block";
 });
 
 function checkIfSubmittedToday(username) {
   const today = new Date().toISOString().slice(0, 10);
   const refPath = ref(db, `submissions/${today}/${username}`);
   return get(refPath).then(snapshot => snapshot.exists());
+}
+
+async function showPreviousScore(username) {
+  try {
+    const res = await fetch(`https://trivia-api-5xxr.onrender.com/today-score/${username}`);
+    const data = await res.json();
+    if (data.score !== null) {
+      showCustomPopup(`Your score today was ${data.score}`);
+    }
+  } catch (err) {
+    console.error("Error fetching previous score", err);
+  }
 }
 
 // == Game Logic ==
@@ -74,7 +86,7 @@ async function fetchTrivia() {
   }
 
   try {
-    const response = await fetch(`https://trivia-backend-5s52.onrender.com/daily-questions/${username}`);
+    const response = await fetch(`https://trivia-api-5xxr.onrender.com/daily-questions/${username}`);
     const data = await response.json();
 
     if (response.ok) {
@@ -123,12 +135,12 @@ function showQuestions(questions) {
           score += 10;
         } else {
           btn.classList.add("incorrect");
-          score -= 5;
           allBtns.forEach(b => {
             if (b.innerHTML === q.correct_answer) {
               b.classList.add("correct");
             }
           });
+          score -= 5;
         }
 
         answeredQuestions++;
@@ -152,7 +164,7 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   if (score === 100) score += 50;
 
   try {
-    const response = await fetch("https://trivia-backend-5s52.onrender.com/submit-score", {
+    const response = await fetch("https://trivia-api-5xxr.onrender.com/submit-score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, score })
